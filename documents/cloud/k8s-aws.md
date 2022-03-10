@@ -1,6 +1,6 @@
 # K8S on AWS(AWS EKS)
 
-## Deploy eks cluster
+## 1. Deploy eks cluster
 
 Dưới đây là hướng dẫn các bước để triển khai k8s cluster bằng eksctl:
 
@@ -8,13 +8,13 @@ Kịch bản: User Alice(IAM User) trong Account A sử dụng role từ Account
 
 ![AssumeRole](../images/aws-eks-assume-role.png)
 
-### Cài đặt tools:
+### 1.1 Cài đặt tools:
 - aws-cli: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 - kubectl: https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 - eksctl: https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
 - awsume: https://awsu.me/general/quickstart.html
 
-### Configure AWS Alice credentials:
+### 1.2 Configure AWS Alice credentials:
 - Đầu tiên, trên account A cần tạo một IAM User(ví dụ ở đây tên là Alice), sau đó lấy được aws credentials là `Access Key` và `Access Secret`.
 - Tiếp theo ta cần config credentials này vào dưới local để dùng aws-cli, chúng ta dùng command:
     ```bash
@@ -41,7 +41,7 @@ Kịch bản: User Alice(IAM User) trong Account A sử dụng role từ Account
     ```
     Như vậy là OK, chúng ta đã config xong credentials của user Alice trên terminal.
 
-### Configure Cross IAM Role:
+### 1.3 Configure Cross IAM Role:
 -  Trên account B, chúng ta tạo một cross account IAM role với external id là Account's ID A.
 
     *Tips*: không nên enable MFA để dễ dàng cho việc switch role trên cli.
@@ -88,7 +88,14 @@ Kịch bản: User Alice(IAM User) trong Account A sử dụng role từ Account
 
     Lúc này đã thực hiện switch role thành công trên cli, chúng ta có thể truy xuất vào các dịch vụ aws trên account B với permission tương ứng.
 
-### Deploy eks cluster by eksctl
+- Assign permission vào role
+
+    Tiếp theo chúng ta phải add policy vào role này để có quyền deploy trên eks cluster.
+
+    Cần add ít nhất những policy vào role (tham khảo tại đây https://eksctl.io/usage/minimum-iam-policies/). Policy nào không có sẵn thì tạo inline policy.
+
+
+### 1.4 Deploy eks cluster by eksctl
 Sau khi cấu hình, chúng ta sẽ triển khai eks cluster bằng eksctl
 
 - Bước 1: Switch role sang account B
@@ -96,18 +103,21 @@ Sau khi cấu hình, chúng ta sẽ triển khai eks cluster bằng eksctl
     $ awsume account-b
     ```
 
-- Bước 2: Tạo cluster \
+- Bước 2: Tạo cluster 
+
     Tạo eks cluster với name là `my-cluster` ở region `ap-southeast-1` và không khởi tạo nodegroups. Chúng ta có thể chạy command sau:
 
     ```bash
     $ eksctl create cluster --name my-cluster --region ap-southeast-1 --without-nodegroup
     ```
+
     Quá trình khởi tạo mất một vài phút, khi terminal xuất hiện output log như bên dưới thì eks cluster đã được khởi tạo thành công
     ```
     [✓]  EKS cluster "my-cluster" in "ap-southeast-1" region is ready
     ```
 
-- Bước 3: Tạo workner node \
+- Bước 3: Tạo workner node 
+
     Trong aws, workernode được gọi là nodegroup. Để tạo nodegroups cho cluster, chúng ta có thể sử dụng một trong hai cách sau:\
     -  Dùng command
         ```
