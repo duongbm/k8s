@@ -1,0 +1,13 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: eks-duongbm
+  region: ap-southeast-1
+managedNodeGroups:
+- name: nodegroups
+  amiFamily: Ubuntu2004
+  instanceType: t3.small
+  volumeSize: 20
+  desiredCapacity: 1
+  ssh:
+    publicKeyName: duongbm
