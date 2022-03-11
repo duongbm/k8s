@@ -44,8 +44,6 @@ Kịch bản: User Alice(IAM User) trong Account A sử dụng role từ Account
 ### 1.3 Configure Cross IAM Role:
 -  Trên account B, chúng ta tạo một cross account IAM role với external id là Account's ID A.
 
-    *Tips*: không nên enable MFA để dễ dàng cho việc switch role trên cli.
-
 - Bước tiếp theo, chúng ta cần lưu lại ARN Role của Cross IAM Role vừa tạo.
 
 - Lúc này, chúng ta cần mở file aws credentials trên PC tại đường dẫn `~/.aws/credentials`. Chúng ta sẽ thấy nội dung như sau:
@@ -295,11 +293,67 @@ Sau khi tạo worker node, một hệ thống k8s đã được triển khai th�
         type: LoadBalancer
     ports:
         - port: 80
-            targetPort: 8080 
+          targetPort: 8080 
     selector:
         app: example
     ```
 - Link tài liệu tham khảo: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
 
 
-## 4. Triển khai K8S Dashboard
+## 4. Deploy K8S Dashboard
+
+- Bước 1: Deploy k8s dashboard
+
+    ```bash
+    $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.5/aio/deploy/recommended.yaml
+    ```
+
+- Bước 2: Tạo `eks-admin` service account và cluster role
+
+    a. Tạo file config tên là `eks-admin-service-account.yaml`
+    ```yaml
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+        name: eks-admin
+        namespace: kube-system
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: ClusterRoleBinding
+    metadata:
+        name: eks-admin
+    roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+    subjects:
+        - kind: ServiceAccount
+        name: eks-admin
+        namespace: kube-system
+    ```
+
+    b. Apply service account 
+    ```
+    $ kubectl apply -f eks-admin-service-account.yaml
+    ```
+
+- Bước 3: Connect đến K8S Dashboard
+
+    a. Lấy token
+    ```
+    kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')
+    ```
+
+    b. Start kube proxy
+    ```
+    $ kubectl proxy
+    ```
+
+    c. Open link
+    ```
+    http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login
+    ```
+
+    d. Chọn Token, paste <token> lấy được từ bước a vào trường token, chọn sign in
+
+- Tài liệu tham khảo: https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
